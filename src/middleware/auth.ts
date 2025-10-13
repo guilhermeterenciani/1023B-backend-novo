@@ -1,39 +1,25 @@
+//Criar um middleware que bloqueia tudo
 import jwt from 'jsonwebtoken'
-import { Request, Response, NextFunction } from 'express'
+import {Request, Response, NextFunction} from 'express';
+function Auth(req: Request, res: Response, next: NextFunction) {
+    console.log("Cheguei no middleware e bloqueei");
+    const authHeaders = req.headers.authorization;
+    console.log(authHeaders);
+    if (!authHeaders)
+        return res.status(401).json({ mensagem: "Voce não passou o token no Bearer" });
+    const token = authHeaders.split(" ")[1]!;
 
-interface AutenticacaoRequest extends Request {
-    usuarioId?: string;
-}
-
-function Auth(req:Request, res:Response, next:NextFunction) {
-    console.log("Cheguei no middleware e bloqueei")
-    const authHeader = req.headers.authorization
-    console.log(authHeader)
-    if (!authHeader) {
-        return res.status(401).json({mensagem:"Token não enviado"})
-    }
-    const token = authHeader.split(' ')[1]!
-
-    jwt.verify(token, process.env.JWT_SECRET!, (err, decoded) => {
+    jwt.verify(token, process.env.JWT_SECRET!, (err: jwt.VerifyErrors | null, decoded: any) => {
         if (err) {
-            console.log(err)
-            return res.status(401).json({mensagem:"Token inválido"})
+            console.log(err);
+            return res.status(401).json({ mensagem: "Token inválido" });
         }
-        if (typeof decoded === 'string' || !decoded||!("ususarioId" in decoded)) {
-            return res.status(401).json({mensagem:"Token inválido"})
+        if (typeof decoded === "string" || !decoded || !("usuarioId" in decoded)) {
+            return res.status(401).json({ mensagem: "Token inválido" });
         }
-        req.usuarioId = decoded.usuarioId
-        next()
-    })
-
-
-
-    /*/if (token === "seu_token_secreto") {
-        console.log("Token válido, prossiga para a próxima etapa")
-        return next()
-    }*/
-    return res.status(401).json({mensagem:"Bloqueia tudo!"})
-
+        // Token is valid, continue
+        next();
+    });
 }
 
-export default Auth
+export default Auth;
